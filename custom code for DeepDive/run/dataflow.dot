@@ -1,0 +1,528 @@
+
+digraph "nips_2017 data flow" {
+    graph[rankdir=BT  # bottom-to-top drawing (or RL/right-to-left may also make sense)
+    ];
+    node [shape=box
+         ,style=dotted
+         ,fontsize=10
+         ,fontname="Ubuntu Mono,Envy Code R,Oxygen Mono,Consolas,Menlo,Monaco,Andale Mono"
+    ];
+    edge [color="#999999"];
+
+
+"process/
+init/app" [shape=ellipse  color="#cc2222" style=solid];
+
+"process/
+init/relation/articles" [shape=ellipse  color="#cc2222" style=solid];
+
+"process/
+init/app" -> "process/
+init/relation/articles" [
+label=""
+
+];
+
+"process/
+init/relation/train_labels" [shape=ellipse  color="#cc2222" style=solid];
+
+"process/
+init/app" -> "process/
+init/relation/train_labels" [
+label=""
+
+];
+
+"process/
+init/relation/valid_labels" [shape=ellipse  color="#cc2222" style=solid];
+
+"process/
+init/app" -> "process/
+init/relation/valid_labels" [
+label=""
+
+];
+
+"process/
+ext_gene_mention_by_map_gene_mention" [shape=ellipse  color="#cc2222" style=solid];
+
+"data/
+sentences" -> "process/
+ext_gene_mention_by_map_gene_mention" [
+label=""
+
+];
+
+"process/
+ext_gene_variation_candidate" [shape=ellipse  color="#cc2222" style=solid];
+
+"data/
+gene_mention" -> "process/
+ext_gene_variation_candidate" [
+label=""
+
+];
+
+"data/
+variation_mention" -> "process/
+ext_gene_variation_candidate" [
+label=""
+
+];
+
+"process/
+ext_gene_variation_feature_by_extract_gene_variation_features" [shape=ellipse  color="#cc2222" style=solid];
+
+"data/
+gene_mention" -> "process/
+ext_gene_variation_feature_by_extract_gene_variation_features" [
+label=""
+
+];
+
+"data/
+sentences" -> "process/
+ext_gene_variation_feature_by_extract_gene_variation_features" [
+label=""
+
+];
+
+"data/
+variation_mention" -> "process/
+ext_gene_variation_feature_by_extract_gene_variation_features" [
+label=""
+
+];
+
+"process/
+ext_gene_variation_label" [shape=ellipse  color="#cc2222" style=solid];
+
+"data/
+gene_variation_candidate" -> "process/
+ext_gene_variation_label" [
+label=""
+
+];
+
+"data/
+train_labels" -> "process/
+ext_gene_variation_label" [
+label=""
+
+];
+
+"process/
+ext_gene_variation_label_resolved" [shape=ellipse  color="#cc2222" style=solid];
+
+"data/
+gene_variation_label" -> "process/
+ext_gene_variation_label_resolved" [
+label=""
+
+];
+
+"process/
+ext_has_effect" [shape=ellipse  color="#cc2222" style=solid];
+
+"data/
+gene_variation_label_resolved" -> "process/
+ext_has_effect" [
+label=""
+
+];
+
+"process/
+ext_sentences_by_nlp_markup" [shape=ellipse  color="#cc2222" style=solid];
+
+"data/
+articles" -> "process/
+ext_sentences_by_nlp_markup" [
+label=""
+
+];
+
+"process/
+ext_variation_mention_by_map_variation_mention" [shape=ellipse  color="#cc2222" style=solid];
+
+"data/
+sentences" -> "process/
+ext_variation_mention_by_map_variation_mention" [
+label=""
+
+];
+
+"process/
+grounding/variable_id_partition" [shape=ellipse  color="#cc2222" style=solid];
+
+"data/
+has_effect" -> "process/
+grounding/variable_id_partition" [
+label=""
+
+];
+
+"process/
+grounding/variable/has_effect/assign_id" [shape=ellipse  color="#cc2222" style=solid];
+
+"process/
+grounding/variable_id_partition" -> "process/
+grounding/variable/has_effect/assign_id" [
+label=""
+
+];
+
+"process/
+grounding/variable_holdout" [shape=ellipse  color="#cc2222" style=solid];
+
+"process/
+grounding/variable/has_effect/assign_id" -> "process/
+grounding/variable_holdout" [
+label=""
+
+];
+
+"process/
+grounding/variable/has_effect/dump" [shape=ellipse  color="#cc2222" style=solid];
+
+"process/
+grounding/variable_holdout" -> "process/
+grounding/variable/has_effect/dump" [
+label=""
+
+];
+
+"process/
+grounding/factor/inf_istrue_has_effect/materialize" [shape=ellipse  color="#cc2222" style=solid];
+
+"data/
+gene_variation_candidate" -> "process/
+grounding/factor/inf_istrue_has_effect/materialize" [
+label=""
+
+];
+
+"data/
+gene_variation_feature" -> "process/
+grounding/factor/inf_istrue_has_effect/materialize" [
+label=""
+
+];
+
+"process/
+grounding/variable/has_effect/assign_id" -> "process/
+grounding/factor/inf_istrue_has_effect/materialize" [
+label=""
+
+];
+
+"process/
+grounding/weight_id_partition" [shape=ellipse  color="#cc2222" style=solid];
+
+"process/
+grounding/factor/inf_istrue_has_effect/materialize" -> "process/
+grounding/weight_id_partition" [
+label=""
+
+];
+
+"process/
+grounding/global_weight_table" [shape=ellipse  color="#cc2222" style=solid];
+
+"process/
+grounding/factor/inf_istrue_has_effect/assign_weight_id" -> "process/
+grounding/global_weight_table" [
+label=""
+
+];
+
+"process/
+grounding/factor/inf_istrue_has_effect/assign_weight_id" [shape=ellipse  color="#cc2222" style=solid];
+
+"process/
+grounding/weight_id_partition" -> "process/
+grounding/factor/inf_istrue_has_effect/assign_weight_id" [
+label=""
+
+];
+
+"process/
+grounding/factor/inf_istrue_has_effect/dump" [shape=ellipse  color="#cc2222" style=solid];
+
+"process/
+grounding/factor/inf_istrue_has_effect/assign_weight_id" -> "process/
+grounding/factor/inf_istrue_has_effect/dump" [
+label=""
+
+];
+
+"process/
+grounding/factor/inf_istrue_has_effect/dump_weights" [shape=ellipse  color="#cc2222" style=solid];
+
+"process/
+grounding/factor/inf_istrue_has_effect/assign_weight_id" -> "process/
+grounding/factor/inf_istrue_has_effect/dump_weights" [
+label=""
+
+];
+
+"process/
+grounding/combine_factorgraph" [shape=ellipse  color="#cc2222" style=solid];
+
+"process/
+grounding/factor/inf_istrue_has_effect/dump" -> "process/
+grounding/combine_factorgraph" [
+label=""
+
+];
+
+"process/
+grounding/factor/inf_istrue_has_effect/dump_weights" -> "process/
+grounding/combine_factorgraph" [
+label=""
+
+];
+
+"process/
+grounding/global_weight_table" -> "process/
+grounding/combine_factorgraph" [
+label=""
+
+];
+
+"process/
+grounding/variable/has_effect/dump" -> "process/
+grounding/combine_factorgraph" [
+label=""
+
+];
+
+"process/
+model/learning" [shape=ellipse  color="#cc2222" style=solid];
+
+"model/
+factorgraph" -> "process/
+model/learning" [
+label=""
+
+];
+
+"process/
+model/inference" [shape=ellipse  color="#cc2222" style=solid];
+
+"model/
+factorgraph" -> "process/
+model/inference" [
+label=""
+
+];
+
+"model/
+weights" -> "process/
+model/inference" [
+label=""
+
+];
+
+"process/
+model/load_weights" [shape=ellipse  color="#cc2222" style=solid];
+
+"model/
+weights" -> "process/
+model/load_weights" [
+label=""
+
+];
+
+"process/
+model/load_probabilities" [shape=ellipse  color="#cc2222" style=solid];
+
+"model/
+probabilities" -> "process/
+model/load_probabilities" [
+label=""
+
+];
+
+"process/
+model/calibration" [shape=ellipse  color="#cc2222" style=solid];
+
+"data/
+model/probabilities" -> "process/
+model/calibration" [
+label=""
+
+];
+
+"data/
+articles" [shape=box3d    color="#2222cc" style=solid];
+
+"process/
+init/relation/articles" -> "data/
+articles" [
+label=""
+
+];
+
+"data/
+gene_mention" [shape=box3d    color="#2222cc" style=solid];
+
+"process/
+ext_gene_mention_by_map_gene_mention" -> "data/
+gene_mention" [
+label=""
+
+];
+
+"data/
+gene_variation_candidate" [shape=box3d    color="#2222cc" style=solid];
+
+"process/
+ext_gene_variation_candidate" -> "data/
+gene_variation_candidate" [
+label=""
+
+];
+
+"data/
+gene_variation_feature" [shape=box3d    color="#2222cc" style=solid];
+
+"process/
+ext_gene_variation_feature_by_extract_gene_variation_features" -> "data/
+gene_variation_feature" [
+label=""
+
+];
+
+"data/
+gene_variation_label" [shape=box3d    color="#2222cc" style=solid];
+
+"process/
+ext_gene_variation_label" -> "data/
+gene_variation_label" [
+label=""
+
+];
+
+"data/
+gene_variation_label_resolved" [shape=box3d    color="#2222cc" style=solid];
+
+"process/
+ext_gene_variation_label_resolved" -> "data/
+gene_variation_label_resolved" [
+label=""
+
+];
+
+"data/
+has_effect" [shape=box3d    color="#2222cc" style=solid];
+
+"process/
+ext_has_effect" -> "data/
+has_effect" [
+label=""
+
+];
+
+"data/
+model/probabilities" [shape=box3d    color="#2222cc" style=solid];
+
+"process/
+model/load_probabilities" -> "data/
+model/probabilities" [
+label=""
+
+];
+
+"data/
+model/weights" [shape=box3d    color="#2222cc" style=solid];
+
+"process/
+model/load_weights" -> "data/
+model/weights" [
+label=""
+
+];
+
+"data/
+sentences" [shape=box3d    color="#2222cc" style=solid];
+
+"process/
+ext_sentences_by_nlp_markup" -> "data/
+sentences" [
+label=""
+
+];
+
+"data/
+train_labels" [shape=box3d    color="#2222cc" style=solid];
+
+"process/
+init/relation/train_labels" -> "data/
+train_labels" [
+label=""
+
+];
+
+"data/
+valid_labels" [shape=box3d    color="#2222cc" style=solid];
+
+"process/
+init/relation/valid_labels" -> "data/
+valid_labels" [
+label=""
+
+];
+
+"data/
+variation_mention" [shape=box3d    color="#2222cc" style=solid];
+
+"process/
+ext_variation_mention_by_map_variation_mention" -> "data/
+variation_mention" [
+label=""
+
+];
+
+"model/
+calibration-plots" [shape=septagon color="#ffffff" style=filled fillcolor="#cc22cc"];
+
+"process/
+model/calibration" -> "model/
+calibration-plots" [
+label=""
+
+];
+
+"model/
+factorgraph" [shape=septagon color="#ffffff" style=filled fillcolor="#cc22cc"];
+
+"process/
+grounding/combine_factorgraph" -> "model/
+factorgraph" [
+label=""
+
+];
+
+"model/
+probabilities" [shape=septagon color="#ffffff" style=filled fillcolor="#cc22cc"];
+
+"process/
+model/inference" -> "model/
+probabilities" [
+label=""
+
+];
+
+"model/
+weights" [shape=septagon color="#ffffff" style=filled fillcolor="#cc22cc"];
+
+"process/
+model/learning" -> "model/
+weights" [
+label=""
+
+];
+
+
+}
+

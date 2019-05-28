@@ -1,0 +1,225 @@
+# Almost everything about a DeepDive app goes into this DDlog file
+# See: http://deepdive.stanford.edu/writing-dataflow-ddlog
+
+@extraction
+has_effect?(
+    @key
+    @references(relation="gene_mention", column="mention_id", alias="gene")
+    gene_id text,
+    @key
+    @references(relation="variation_mention", column="mention_id", alias="variation")
+    variation_id text
+) Categorical(9).
+
+@extraction
+inference_result(
+    @key
+    gene_name text,
+    @key
+    variation_name text,
+    @key
+    @references(relation="gene_mention", column="mention_id", alias="gene")
+    gene_id text,
+    @key
+    @references(relation="variation_mention", column="mention_id", alias="variation")
+    variation_id text,
+    @key
+    prediction int,
+    @key
+    expectation double
+) Categorical(9).
+
+## Input Data #################################################################
+
+@source
+articles(
+    @key
+    @distributed_by
+    id text,
+    @searchable
+    content text
+).
+
+@source
+train_labels(
+    @key
+    gene_name text,
+    @key
+    variation_name text,
+    @key
+    class int
+).
+
+@source
+valid_labels(
+    @key
+    gene_name text,
+    @key
+    variation_name text,
+    @key
+    class int
+).
+
+## NLP markup #################################################################
+
+@source
+sentences(
+    @key
+    @distributed_by
+    doc_id         text,
+    @key
+    sentence_index int,
+    @searchable
+    sentence_text  text,
+    tokens         text[],
+    lemmas         text[],
+    pos_tags       text[],
+    ner_tags       text[],
+    doc_offsets    int[],
+    dep_types      text[],
+    dep_tokens     int[]
+).
+
+function nlp_markup over (
+        doc_id text,
+        content text
+    ) returns rows like sentences
+    implementation "udf/nlp_markup.sh" handles tsv lines.
+
+sentences += nlp_markup(doc_id, content) :-
+    articles(doc_id, content).
+
+## Candidate mapping ##########################################################
+
+@extraction
+gene_mention(
+    @key
+    mention_id text,
+    @searchable
+    mention_text text,
+    @distributed_by
+    @references(relation="sentences", column="doc_id",         alias="appears_in")
+    doc_id text,
+    @references(relation="sentences", column="sentence_index", alias="appears_in")
+    sentence_index int,
+    gene_begin_index int,
+    gene_end_index int
+).
+
+function map_gene_mention over (
+        doc_id text,
+        sentence_index int,
+        tokens text[],
+        ner_tags text[]
+    ) returns rows like gene_mention
+    implementation "udf/map_gene_mention.py" handles tsv lines.
+
+gene_mention += map_gene_mention(
+    doc_id, sentence_index, tokens, ner_tags
+) :- sentences(doc_id, sentence_index, _, tokens, _, _, ner_tags, _, _, _).
+
+@extraction
+variation_mention(
+    @key
+    mention_id text,
+    @searchable
+    mention_text text,
+    @distributed_by
+    @references(relation="sentences", column="doc_id",         alias="appears_in")
+    doc_id text,
+    @references(relation="sentences", column="sentence_index", alias="appears_in")
+    sentence_index int,
+    var_begin_index int,
+    var_end_index int
+).
+
+function map_variation_mention over (
+        doc_id text,
+        sentence_index int,
+        tokens text[],
+        ner_tags text[]
+    ) returns rows like variation_mention
+    implementation "udf/map_variation_mention.py" handles tsv lines.
+
+variation_mention += map_variation_mention(
+    doc_id, sentence_index, tokens, ner_tags
+) :- sentences(doc_id, sentence_index, _, tokens, _, _, ner_tags, _, _, _).
+
+gene_variation_candidate(
+    gene_id text,
+    gene_name text,
+    variation_id text,
+    variation_name text
+).
+
+gene_variation_candidate(gene_id, gene_name, variation_id, variation_name) :-
+    gene_mention(gene_id, gene_name, same_doc, same_sentence, _, _),
+    variation_mention(variation_id, variation_name, same_doc, same_sentence, _, _).
+
+## Feature Extraction #########################################################
+
+# Feature extraction (using DDLIB via a UDF) at the relation level
+gene_variation_feature(
+    gene_id text,
+    variation_id text,
+    feature text
+).
+
+function extract_gene_variation_features over (
+        gene_id text,
+        variation_id text,
+        gene_begin_index int,
+        gene_end_index int,
+        var_begin_index int,
+        var_end_index int,
+        doc_id text,
+        sent_index int,
+        tokens text[],
+        lemmas text[],
+        pos_tags text[],
+        ner_tags text[],
+        dep_types text[],
+        dep_tokens int[]
+    ) returns rows like gene_variation_feature
+    implementation "udf/extract_gene_variation_features.py" handles tsv lines.
+
+gene_variation_feature += extract_gene_variation_features(
+    gene_id, variation_id, gene_begin_index, gene_end_index, var_begin_index, var_end_index,
+    doc_id, sent_index, tokens, lemmas, pos_tags, ner_tags, dep_types, dep_tokens
+) :-
+    gene_mention(gene_id, _, doc_id, sent_index, gene_begin_index, gene_end_index),
+    variation_mention(variation_id, _, doc_id, sent_index, var_begin_index, var_end_index),
+    sentences(doc_id, sent_index, _, tokens, lemmas, pos_tags, ner_tags, _, dep_types, dep_tokens).
+
+## Distant Supervision ########################################################
+
+gene_variation_label(
+    gene_id text,
+    variation_id text,
+    class int,
+    rule_id text
+).
+
+# make sure all pairs in gene_variation_candidate are considered as unsupervised examples
+gene_variation_label(gene_id, variation_id, NULL, NULL) :- gene_variation_candidate(gene_id, _, variation_id, _).
+
+# distant supervision using data from known samples
+gene_variation_label(gene_id, variation_id, class, "from_train") :-
+    gene_variation_candidate(gene_id, gene_name, variation_id, variation_name),
+    train_labels(gene, variation, class),
+    [ lower(gene) = lower(gene_name), lower(variation) = lower(variation_name) ].
+
+# resolve multiple labels by return max value
+gene_variation_label_resolved(gene_id, variation_id, MAX(vote)) :- gene_variation_label(gene_id, variation_id, vote, rule_id).
+
+# assign the resolved labels for the gene-variation relation
+has_effect(gene_id, variation_id) = l :- gene_variation_label_resolved(gene_id, variation_id, l).
+
+## Inference Rules ############################################################
+
+# Features
+@weight(f)
+has_effect(gene_id, variation_id) :-
+    gene_variation_candidate(gene_id, _, variation_id, _),
+    gene_variation_feature(gene_id, variation_id, f).
+
